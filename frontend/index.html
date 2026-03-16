@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mihomo Dashboard</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
+        .error { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+        .loading { background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; }
+        .proxy-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .proxy-group {
+            grid-column: 1 / -1;
+            margin-top: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .proxy-item {
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            font-size: 14px;
+        }
+        .proxy-item:hover {
+            background: #e9ecef;
+            border-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        .proxy-item.active {
+            background: #007bff;
+            color: white;
+            border-color: #0056b3;
+            font-weight: 600;
+        }
+        button {
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        button:hover { background: #0056b3; }
+        button:active { transform: scale(0.98); }
+        .current-node {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #007bff;
+            color: white;
+            border-radius: 12px;
+            font-size: 13px;
+            margin-left: 8px;
+        }
+        .proxy-group-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .add-provider-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+        .add-provider-form h3 {
+            margin-top: 0;
+            color: #155724;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        .providers-list {
+            margin-top: 20px;
+        }
+        .subscription-item {
+            padding: 12px 15px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+        .provider-item {
+            padding: 12px 15px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .provider-item.active {
+            border-left: 4px solid #28a745;
+        }
+        .provider-info {
+            flex: 1;
+        }
+        .provider-name {
+            font-weight: 600;
+            color: #007bff;
+            margin-bottom: 4px;
+        }
+        .provider-url {
+            color: #666;
+            font-size: 12px;
+            word-break: break-all;
+        }
+        .provider-actions {
+            margin-left: 15px;
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .provider-tag {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .tag-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        .tag-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Mihomo Dashboard</h1>
+        <div id="status"></div>
+        
+        <div>
+            <button onclick="loadProxies()">🔄 刷新节点列表</button>
+            <button onclick="loadTraffic()">📊 查看流量</button>
+            <button onclick="toggleSubscriptionList()">📋 订阅列表</button>
+        </div>
+
+        <div id="subscription-list" style="display: block;">
+            <div class="add-provider-form">
+                <h3>📋 订阅地址列表</h3>
+                <p style="color: #666; margin-bottom: 15px;">
+                    💡 当前系统配置的订阅地址如下，添加新订阅需要编辑服务器配置文件
+                </p>
+                
+                <div class="subscription-item">
+                    <strong>订阅 #1</strong>
+                    <div style="font-size: 13px; color: #666; margin-top: 5px; word-break: break-all;">
+                        https://su.anywayfosec.xyz/api/v1/client/subscribe?token=bdc2904c4caa84f2e41fb73be508725c
+                    </div>
+                    <span style="font-size: 12px; color: #4CAF50;">● 活跃</span>
+                </div>
+                
+                <div class="subscription-item">
+                    <strong>订阅 #2</strong>
+                    <div style="font-size: 13px; color: #666; margin-top: 5px; word-break: break-all;">
+                        https://sub3.smallstrawberry.com/api/v1/client/subscribe?token=0a0f66805e2c4a66a2533279d872982d
+                    </div>
+                    <span style="font-size: 12px; color: #4CAF50;">● 活跃</span>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 6px; border-left: 4px solid #ffc107;">
+                    <h4 style="margin-bottom: 10px;">💡 如何添加新订阅？</h4>
+                    <p style="margin-bottom: 10px;"><strong>需要编辑服务器配置文件：</strong></p>
+                    <code style="background: #f8f9fa; padding: 8px; border-radius: 4px; display: block; margin-bottom: 10px;">
+                        /opt/clash/merge-subscriptions.py
+                    </code>
+                    <p style="font-size: 13px; color: #666;">
+                        在 SUB_URLS 数组中添加新的订阅 URL，然后运行更新脚本
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div id="proxies"></div>
+        <div id="traffic"></div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        let isLoading = false;
+        let proxyGroupProviders = [];
+
+        function showError(msg) {
+            document.getElementById('status').innerHTML = `<div class="status error">❌ ${msg}</div>`;
+            setTimeout(() => {
+                if (!isLoading) document.getElementById('status').innerHTML = '';
+            }, 5000);
+        }
+
+        function showSuccess(msg) {
+            document.getElementById('status').innerHTML = `<div class="status success">✅ ${msg}</div>`;
+            setTimeout(() => {
+                if (!isLoading) document.getElementById('status').innerHTML = '';
+            }, 3000);
+        }
+
+        function showLoading(msg) {
+            isLoading = true;
+            document.getElementById('status').innerHTML = `<div class="status loading">⏳ ${msg}</div>`;
+        }
+
+        function hideLoading() {
+            isLoading = false;
+            document.getElementById('status').innerHTML = '';
+        }
+
+        function toggleSubscriptionList() {
+            const list = document.getElementById('subscription-list');
+            list.style.display = list.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function api(path, method = 'GET', body = null) {
+            try {
+                const headers = {};
+                if (body) {
+                    headers['Content-Type'] = 'application/json';
+                    body = JSON.stringify(body);
+                }
+
+                const res = await fetch(`${API_URL}${path}`, {
+                    method,
+                    headers,
+                    body
+                });
+                
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+                return await res.json();
+            } catch (err) {
+                console.error('API Error:', err);
+                showError(`请求失败: ${err.message}`);
+                throw err;
+            }
+        }
+
+        async function addProvider() {
+            const name = document.getElementById('provider-name').value.trim();
+            const url = document.getElementById('provider-url').value.trim();
+
+            if (!name || !url) {
+                showError('请填写订阅名称和URL');
+                return;
+            }
+
+            try {
+                showLoading('正在添加订阅...');
+                const result = await api('/add-provider', 'POST', { name, url });
+                
+                if (result.success) {
+                    showSuccess(result.message);
+                    document.getElementById('provider-name').value = '';
+                    document.getElementById('provider-url').value = '';
+                    toggleAddProvider();
+                    
+                    // 等待mihomo重启后刷新列表
+                    setTimeout(() => {
+                        loadProxies();
+                        loadProviders();
+                    }, 4000);
+                } else {
+                    showError(result.message);
+                    hideLoading();
+                }
+            } catch (err) {
+                hideLoading();
+            }
+        }
+
+        async function removeProvider(name) {
+            if (!confirm(`确定要删除订阅源 "${name}" 吗？`)) {
+                return;
+            }
+
+            try {
+                showLoading(`正在删除订阅 ${name}...`);
+                const result = await api('/remove-provider', 'POST', { name });
+                
+                if (result.success) {
+                    showSuccess(result.message);
+                    
+                    // 等待mihomo重启后刷新列表
+                    setTimeout(() => {
+                        loadProxies();
+                        loadProviders();
+                    }, 4000);
+                } else {
+                    showError(result.message);
+                    hideLoading();
+                }
+            } catch (err) {
+                hideLoading();
+            }
+        }
+
+        async function loadProviders() {
+            try {
+                const result = await api('/list-providers');
+                if (result.success) {
+                    proxyGroupProviders = result.proxyGroupProviders || [];
+                    
+                    if (result.providers) {
+                        let html = '<h3>📋 当前订阅源</h3>';
+                        for (const [name, provider] of Object.entries(result.providers)) {
+                            const isActive = proxyGroupProviders.includes(name);
+                            const tagClass = isActive ? 'tag-active' : 'tag-inactive';
+                            const tagText = isActive ? '✓ 已启用' : '✗ 未启用';
+                            const itemClass = isActive ? 'provider-item active' : 'provider-item';
+                            
+                            html += `<div class="${itemClass}">
+                                <div class="provider-info">
+                                    <div class="provider-name">${name} <span class="provider-tag ${tagClass}">${tagText}</span></div>
+                                    <div class="provider-url">${provider.url}</div>
+                                </div>
+                                <div class="provider-actions">
+                                    <button class="btn-danger btn-sm" onclick="removeProvider('${name}')">🗑️ 删除</button>
+                                </div>
+                            </div>`;
+                        }
+                        document.getElementById('providers').innerHTML = html;
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load providers:', err);
+            }
+        }
+
+        async function loadProxies() {
+            try {
+                showLoading('正在加载节点列表...');
+                const data = await api('/proxies');
+                renderProxies(data);
+                showSuccess('节点列表已更新');
+            } catch (err) {
+                hideLoading();
+            } finally {
+                setTimeout(() => { isLoading = false; }, 500);
+            }
+        }
+
+        function renderProxies(data) {
+            const groups = [];
+            for (const [name, proxy] of Object.entries(data.proxies)) {
+                if (proxy.type === 'Selector' || proxy.type === 'URLTest' || proxy.type === 'Fallback') {
+                    groups.push({
+                        name,
+                        type: proxy.type,
+                        now: proxy.now,
+                        all: proxy.all
+                    });
+                }
+            }
+
+            let html = '';
+            groups.forEach(group => {
+                html += `<div class="proxy-group">
+                    <div class="proxy-group-header">
+                        <div>
+                            <strong>📡 ${group.name}</strong>
+                            <span class="current-node">当前: ${group.now}</span>
+                        </div>
+                        <small style="color: #666;">${group.type}</small>
+                    </div>
+                    <div class="proxy-list">`;
+                
+                group.all.forEach(proxy => {
+                    const active = proxy === group.now ? 'active' : '';
+                    html += `<div class="proxy-item ${active}" onclick="switchProxy('${group.name}', '${proxy.replace(/'/g, "\\'")}')">${proxy}</div>`;
+                });
+                
+                html += '</div></div>';
+            });
+            document.getElementById('proxies').innerHTML = html;
+        }
+
+        async function switchProxy(group, proxy) {
+            try {
+                showLoading(`正在切换 ${group} 到 ${proxy}...`);
+                await api(`/proxies/${encodeURIComponent(group)}`, 'PUT', { name: proxy });
+                showSuccess(`✅ ${group} 已切换到 ${proxy}`);
+                setTimeout(() => loadProxies(), 500);
+            } catch (err) {
+                hideLoading();
+            }
+        }
+
+        async function loadTraffic() {
+            try {
+                showLoading('正在获取流量信息...');
+                const data = await api('/traffic');
+                let html = '<h2>📊 流量统计</h2>';
+                if (data.up) {
+                    html += `<p>上传: <strong>${formatBytes(data.up)}</strong> | 下载: <strong>${formatBytes(data.down)}</strong></p>`;
+                } else {
+                    html += '<p>暂无流量数据</p>';
+                }
+                document.getElementById('traffic').innerHTML = html;
+                showSuccess('流量信息已更新');
+            } catch (err) {
+                hideLoading();
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (!bytes) return '0 B';
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // 自动加载
+        loadProviders();
+        loadProxies();
+    </script>
+</body>
+</html>
