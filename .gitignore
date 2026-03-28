@@ -33,3 +33,8 @@ Thumbs.db
 # 备份文件
 backups/
 *.bak
+
+# Sensitive files
+sub.yaml
+docker-compose.yml
+mihomo-data/
